@@ -1,0 +1,41 @@
+#
+# makefile
+#
+
+# top dir
+TOPDIR = $(shell pwd)/..
+# project name
+PJNAME = litets
+
+# tool chain prefix
+CROSS = $(CP)
+# debug or release
+DEBUG = 0
+# static or shared or exec
+BINARY = static
+# target name
+TARGET = lib$(PJNAME).a
+# output binary path
+INSTALL_PATH = $(TOPDIR)/build
+
+# source dir
+SRCPATH = $(TOPDIR)/litets
+# source sub dir
+SRCSUBDIR = 
+
+# header dir
+INCDIR = $(TOPDIR)/include
+
+# dependence library path
+LIBDIR = 
+# dependence library
+LIBS = 
+
+# compile flags
+CFLAGS = -Wall
+
+# link flags
+LDFLAGS = 
+
+# make
+include common.mk

@@ -1,0 +1,41 @@
+#
+# makefile
+#
+
+# top dir
+TOPDIR = $(shell pwd)/..
+# project name
+PJNAME = demo
+
+# tool chain prefix
+CROSS = $(CP)
+# debug or release
+DEBUG = 0
+# static or shared or exec
+BINARY = exec
+# target name
+TARGET = $(PJNAME)
+# output binary path
+INSTALL_PATH = $(TOPDIR)/build
+
+# source dir
+SRCPATH = $(TOPDIR)/demo
+# source sub dir
+SRCSUBDIR = 
+
+# header dir
+INCDIR = $(TOPDIR)/include
+
+# dependence library path
+LIBDIR = $(TOPDIR)/build
+# dependence library
+LIBS = litets
+
+# compile flags
+CFLAGS = -Wall
+
+# link flags
+LDFLAGS = 
+
+# make
+include common.mk
