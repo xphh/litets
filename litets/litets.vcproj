@@ -159,6 +159,10 @@
 			Name="source"
 			>
 			<File
+				RelativePath=".\buffer_handle.c"
+				>
+			</File>
+			<File
 				RelativePath=".\ps_demux.c"
 				>
 			</File>

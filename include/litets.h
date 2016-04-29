@@ -125,7 +125,19 @@ int lts_ts_demux(TDemux *handle, uint8_t *ts_buf, int len);
 // PS码流解复用，成功返回已处理长度，失败返回-1
 // ps_buf是传入的PS流的缓冲
 int lts_ps_demux(TDemux *handle, uint8_t *ps_buf, int len);
-	
+
+/************************************************************************/
+/* 缓存处理辅助接口                                                     */
+/************************************************************************/
+typedef struct
+{
+	int buf_size;
+	int (*input)(uint8_t *buf, int size, void *context);
+	int (*output)(uint8_t *buf, int size, void *context);
+	void *context;
+} TBufferHandler;
+
+int lts_buffer_handle(TBufferHandler *handler);
 
 #ifdef __cplusplus
 }
