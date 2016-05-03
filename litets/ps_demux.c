@@ -112,50 +112,30 @@ static int handle_pes(TDemux *handle, uint8_t *buf, int len)
 	
 	if (psize > 0)
 	{
-		char stream_id = buf[3];
-
-		// 判断是否是map表中的es
-		if (handle->info.program_num == 1)
+		uint8_t stream_id;
+		uint64_t pts;
+		int es_len;
+		int pes_head_len = lts_pes_parse_header(buf, len, &stream_id, &pts, &es_len);
+		if (pes_head_len > 0)
 		{
-			int i;
-			for (i = 0; i < handle->info.prog[0].stream_num; i++)
+			// 判断是否是map表中的es
+			if (handle->info.program_num == 1)
 			{
-				if (stream_id == handle->info.prog[0].stream[i].stream_id)
+				int i;
+				for (i = 0; i < handle->info.prog[0].stream_num; i++)
 				{
-					// 是PES包，填写节目号和流号
-					handle->is_pes = 1;
-					handle->program_no = 0;
-					handle->stream_no = i;
-					break;
-				}
-			}
-		}
-
-		// 找到，解析PES包
-		if (handle->is_pes)
-		{
-			// 解析PTS
-			{
-				uint8_t flags_2 = buf[7];
-				if (flags_2 & 0x80)
-				{
-					uint8_t *pts_buf = &buf[9];
-					handle->pts  = ((uint64_t)pts_buf[0] & 0x0E) << 29;
-					handle->pts |= ((uint64_t)pts_buf[1]       ) << 22;
-					handle->pts |= ((uint64_t)pts_buf[2] & 0xFE) << 14;
-					handle->pts |= ((uint64_t)pts_buf[3]       ) <<  7;
-					handle->pts |= ((uint64_t)pts_buf[4] & 0xFE) >>  1;
-					handle->pts /= 90;
-				}
-			}
-			// 解析ES
-			{
-				int pes_len = BUF2U16(&buf[4]);
-				if (pes_len + 6 <= len)
-				{
-					handle->pes_head_len = buf[8];
-					handle->es_ptr = buf + 9 + handle->pes_head_len;
-					handle->es_len = pes_len - 3 - handle->pes_head_len;
+					if (stream_id == handle->info.prog[0].stream[i].stream_id)
+					{
+						// 是PES包，填写节目号和流号，以及其他信息
+						handle->is_pes = 1;
+						handle->program_no = 0;
+						handle->stream_no = i;
+						handle->pts = pts;
+						handle->pes_head_len = pes_head_len;
+						handle->es_ptr = buf + pes_head_len;
+						handle->es_len = es_len;
+						break;
+					}
 				}
 			}
 		}

@@ -17,19 +17,6 @@ static uint16_t get_ts_stream_id(int program_number, int stream_number)
 	return 0x0100 + program_number * MAX_STREAM_NUM + stream_number;
 }
 
-// 确定PES中的stream_id
-static uint8_t get_pes_stream_id(int type, int program_number, int stream_number)
-{
-	uint8_t id = 0;
-
-	if (IS_VIDEO(type))
-		id = 0xE0 + program_number * MAX_STREAM_NUM + stream_number;
-	else
-		id = 0xC0 + program_number * MAX_STREAM_NUM + stream_number;
-
-	return id;
-}
-
 // CRC32
 static uint32_t CRC_encode(uint8_t* data, int len)
 {
@@ -56,23 +43,6 @@ static uint32_t CRC_encode(uint8_t* data, int len)
 	return CRC;
 }
 
-// 生成PES头中的PTS和DTS字段
-static void make_pes_pts_dts(uint8_t *buff, uint64_t ts)
-{
-	// PTS
-	buff[0] = (uint8_t)(((ts >> 30) & 0x07) << 1) | 0x30 | 0x01;
-	buff[1] = (uint8_t)((ts >> 22) & 0xff);
-	buff[2] = (uint8_t)(((ts >> 15) & 0xff) << 1) | 0x01;
-	buff[3] = (uint8_t)((ts >> 7) & 0xff);
-	buff[4] = (uint8_t)((ts & 0xff) << 1) | 0x01;
-	// DTS
-	buff[5] = (uint8_t)(((ts >> 30) & 0x07) << 1) | 0x10 | 0x01;
-	buff[6] = (uint8_t)((ts >> 22) & 0xff);
-	buff[7] = (uint8_t)(((ts >> 15) & 0xff) << 1) | 0x01;
-	buff[8] = (uint8_t)((ts >> 7) & 0xff);
-	buff[9] = (uint8_t)((ts & 0xff) << 1) | 0x01;
-}
-
 // 生成TS头中自适应区的PCR字段
 static void make_ts_pcr(char *buff, uint64_t ts)
 {
@@ -82,60 +52,6 @@ static void make_ts_pcr(char *buff, uint64_t ts)
 	buff[3] = (uint8_t)(ts >> 1);
 	buff[4] = (uint8_t)(((ts & 1) << 7) | 0x7e);
 	buff[5] = 0x00;
-}
-
-// 生成一个带PTS和DTS的PES头部
-// 目前当pes_packet_length超过2B, 设置为0, 对于TS, 标准允许设置为0
-static int gen_pes_head_with_pts_dts(TEsFrame *frame, uint8_t *dst, TsProgramInfo *pi)
-{
-	uint8_t *buf = dst;
-	pes_head_flags flags = {0};
-	int type;
-	int pno = frame->program_number;
-	int sno = frame->stream_number;
-	int pes_packet_length = frame->length + 13;
-
-	if (pes_packet_length > 65535)
-	{
-		pes_packet_length = 0;
-	}
-
-	// prefix
-	*buf++ = 0;
-	*buf++ = 0;
-	*buf++ = 1;
-
-	// check
-	if (pno >= pi->program_num)
-	{
-		return -1;
-	}
-	if (sno >= pi->prog[pno].stream_num)
-	{
-		return -1;
-	}
-
-	// stream_id
-	type = pi->prog[pno].stream[sno].type;
-	*buf++ = get_pes_stream_id(type, pno, sno);
-
-	// pes length
-	*buf++ = (uint8_t)(pes_packet_length >> 8);
-	*buf++ = (uint8_t)pes_packet_length;
-
-	// pes head flags
-	flags.reserved = 2;
-	flags.PTS_DTS_flags = 3;
-	memcpy(buf, &flags, 2);
-	buf += 2;
-
-	// pes head length
-	*buf++ = 10;
-
-	// PTS & DTS
-	make_pes_pts_dts(buf, frame->pts);
-
-	return 19;
 }
 
 // 生成一个标准的TS头部
@@ -178,6 +94,7 @@ static void set_ts_header_counter(char* pkt, int counter)
 	ts_header* header = (ts_header*)pkt;
 	header->head.continuity_counter = counter & 0x0f;
 }
+
 // 生成一个PAT的TS包
 static void gen_pat_ts_packet(char *pkt, TsProgramInfo *pi)
 {
@@ -353,11 +270,16 @@ static int gen_pes_ts_packets(TEsFrame *frame, char *dest, int maxlen, TsProgram
 	uint16_t PID = get_ts_stream_id(frame->program_number, frame->stream_number);
 	int total_length = 0;
 	TsStreamSpec *ss = &pi->prog[frame->program_number].stream[frame->stream_number];
+	
+	ss->stream_id = lts_pes_stream_id(ss->type, frame->program_number, frame->stream_number);
 
 	// pes header 19B
-	gen_pes_head_with_pts_dts(frame, pes_header, pi);
-
-	pes_len = 19 + frame->length;
+	pes_len = lts_pes_make_header(ss->stream_id, frame->pts, frame->length, pes_header, -1);
+	if (pes_len < 0)
+	{
+		return -1;
+	}
+	pes_len += frame->length;
 
 	// 可以放入一个TS包中, 带PCR的TS头长度为12B
 	if (pes_len <= 176/*188-12*/)

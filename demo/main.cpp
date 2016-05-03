@@ -116,7 +116,7 @@ void do_streaming(const char *filename)
 	memset(&g_prog_info, 0, sizeof(g_prog_info));
 	g_prog_info.program_num = 1;
 	g_prog_info.prog[0].stream_num = 1;
-	g_prog_info.prog[0].stream[0].type = EsFrame_H264;
+	g_prog_info.prog[0].stream[0].type = STREAM_TYPE_VIDEO_H264;
 	
 	TBufferHandler handler;
 	handler.buf_size = BUF_SIZE;

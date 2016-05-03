@@ -28,21 +28,32 @@ extern "C" {
 #endif
 
 /************************************************************************/
-/* 接口相关结构体                                                       */
+/* 实体流相关定义                                                       */
 /************************************************************************/
-#define EsFrame_Unknown	((uint8_t)0x00)
-#define EsFrame_MP3		((uint8_t)0x03)
-#define EsFrame_MP2		((uint8_t)0x04)
-#define EsFrame_MPEG4	((uint8_t)0x10)
-#define EsFrame_H264	((uint8_t)0x1B)
-
-#define IS_VIDEO(type)	(((uint8_t)type == EsFrame_MPEG4 || (uint8_t)type == EsFrame_H264) ? 1 : 0)
+#define STREAM_TYPE_VIDEO_MPEG1     0x01
+#define STREAM_TYPE_VIDEO_MPEG2     0x02
+#define STREAM_TYPE_AUDIO_MPEG1     0x03
+#define STREAM_TYPE_AUDIO_MPEG2     0x04
+#define STREAM_TYPE_PRIVATE_SECTION 0x05
+#define STREAM_TYPE_PRIVATE_DATA    0x06
+#define STREAM_TYPE_AUDIO_AAC       0x0f
+#define STREAM_TYPE_AUDIO_AAC_LATM  0x11
+#define STREAM_TYPE_VIDEO_MPEG4     0x10
+#define STREAM_TYPE_VIDEO_H264      0x1b
+#define STREAM_TYPE_VIDEO_HEVC      0x24
+#define STREAM_TYPE_VIDEO_CAVS      0x42
+#define STREAM_TYPE_VIDEO_VC1       0xea
+#define STREAM_TYPE_VIDEO_DIRAC     0xd1
+#define STREAM_TYPE_AUDIO_AC3       0x81
+#define STREAM_TYPE_AUDIO_DTS       0x82
+#define STREAM_TYPE_AUDIO_TRUEHD    0x83
 
 typedef void (*SEGCALLBACK)(uint8_t *buf, int len, void *ctx);
 
 #define MIN_PES_LENGTH	(1000)
 #define MAX_PES_LENGTH	(65000)
 
+// 实体流帧信息
 typedef struct
 {
 	int program_number; // 节目编号，就是TsProgramInfo中prog数组下标，对于PS该值只能为0
@@ -56,15 +67,29 @@ typedef struct
 	void *ctx;			// 回调上下文
 } TEsFrame;
 
+// 判断是否视频
+int lts_is_video(int type);
+// 判断是否音频
+int lts_is_audio(int type);
+
+// 确定PES中的stream_id
+uint8_t lts_pes_stream_id(int type, int program_number, int stream_number);
+
+// 生成PES头部，返回头部总长度
+int lts_pes_make_header(uint8_t stream_id, uint64_t pts, int es_len, uint8_t *dest, int maxlen);
+
+// 解析PES头部长度，返回头部总长度
+int lts_pes_parse_header(uint8_t *pes, int len, uint8_t *stream_id, uint64_t *pts, int *es_len);
+
 /************************************************************************/
-/* 目前最多支持1个节目2条流                                             */
+/* 节目信息定义                                                         */
 /************************************************************************/
 // 每条流的详情
 typedef struct
 {
-	char type;				// [I]媒体类型
-	char stream_id;			// [O]实体流ID（与PES头部id相同，PS解码用）
-	int es_pid;				// [O]实体流的PID（TS解码用）
+	uint8_t type;			// [I]媒体类型
+	uint8_t stream_id;		// [O]实体流ID（与PES头部id相同）
+	int es_pid;				// [O]实体流的PID
 	int continuity_counter;	// [O] TS包头部的连续计数器, 外部需要维护这个计数值, 必须每次传入上次传出的计数值
 } TsStreamSpec;
 
@@ -80,7 +105,7 @@ typedef struct
 	TsStreamSpec stream[MAX_STREAM_NUM];
 } TsProgramSpec;
 
-// 节目信息
+// 节目信息（目前最多支持1个节目2条流）
 #define MAX_PROGRAM_NUM		(1)
 typedef struct
 {

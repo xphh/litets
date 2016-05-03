@@ -159,7 +159,11 @@
 			Name="source"
 			>
 			<File
-				RelativePath=".\buffer_handle.c"
+				RelativePath=".\misc.c"
+				>
+			</File>
+			<File
+				RelativePath=".\pes.c"
 				>
 			</File>
 			<File

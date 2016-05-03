@@ -123,9 +123,9 @@ static int set_sys_header(TsProgramSpec *spec, uint8_t *dest, int maxlen, int ra
 
 		for (i = 0; i < spec->stream_num; i++)
 		{
-			if (IS_VIDEO(spec->stream[i].type))
+			if (lts_is_video(spec->stream[i].type))
 				vnum++;
-			else 
+			else if (lts_is_audio(spec->stream[i].type))
 				anum++;
 		}
 		
@@ -139,19 +139,6 @@ static int set_sys_header(TsProgramSpec *spec, uint8_t *dest, int maxlen, int ra
 	hdr->rate_bound[2] = ((( rate_bound << 1) & 0xfe) | 0x01 );	
 		
 	return hdrlen;
-}
-
-// 确定PES中的stream_id
-static uint8_t get_pes_stream_id(int type, int program_number, int stream_number)
-{
-	uint8_t id = 0;
-	
-	if (IS_VIDEO(type))
-		id = 0xE0 + program_number * MAX_STREAM_NUM + stream_number;
-	else
-		id = 0xC0 + program_number * MAX_STREAM_NUM + stream_number;
-	
-	return id;
 }
 
 static int set_psm(TsProgramSpec *spec, uint8_t *dest, int maxlen)
@@ -181,7 +168,7 @@ static int set_psm(TsProgramSpec *spec, uint8_t *dest, int maxlen)
 	for (i = 0; i < es_num; i++)
 	{
 		es[i].stream_type = spec->stream[i].type;
-		es[i].es_id = get_pes_stream_id(spec->stream[i].type, 0, i);
+		es[i].es_id = lts_pes_stream_id(spec->stream[i].type, 0, i);
 		es->es_info_length[0] = 0;
 		es->es_info_length[1] = 0;
 	}
@@ -194,70 +181,6 @@ static int set_psm(TsProgramSpec *spec, uint8_t *dest, int maxlen)
 	crc[3] = 0;
 	
 	return hdrlen;
-}
-
-/************************************************************************/
-/* PES 封包                                                             */
-/************************************************************************/
-// 生成PES头中的PTS和DTS字段
-static void make_pes_pts_dts(uint8_t *buff, uint64_t ts)
-{
-	// PTS
-	buff[0] = (uint8_t)(((ts >> 30) & 0x07) << 1) | 0x30 | 0x01;
-	buff[1] = (uint8_t)((ts >> 22) & 0xff);
-	buff[2] = (uint8_t)(((ts >> 15) & 0xff) << 1) | 0x01;
-	buff[3] = (uint8_t)((ts >> 7) & 0xff);
-	buff[4] = (uint8_t)((ts & 0xff) << 1) | 0x01;
-	// DTS
-	buff[5] = (uint8_t)(((ts >> 30) & 0x07) << 1) | 0x10 | 0x01;
-	buff[6] = (uint8_t)((ts >> 22) & 0xff);
-	buff[7] = (uint8_t)(((ts >> 15) & 0xff) << 1) | 0x01;
-	buff[8] = (uint8_t)((ts >> 7) & 0xff);
-	buff[9] = (uint8_t)((ts & 0xff) << 1) | 0x01;
-}
-
-// 生成一个带PTS和DTS的PES头部
-static int gen_pes_head_with_pts_dts(int pes_len, uint8_t stream_id, uint64_t pts, uint8_t *dest, int maxlen)
-{
-	uint8_t *buf = dest;
-	pes_head_flags flags = {0};
-	int pes_packet_length = pes_len + 13;
-	
-	if (pes_packet_length > 65535)
-	{
-		pes_packet_length = 0;
-	}
-	
-	// prefix
-	*buf++ = 0;
-	*buf++ = 0;
-	*buf++ = 1;
-	
-	// stream_id
-	*buf++ = stream_id;
-	
-	// pes length
-	*buf++ = (uint8_t)(pes_packet_length >> 8);
-	*buf++ = (uint8_t)pes_packet_length;
-	
-	// pes head flags
-	flags.reserved = 2;
-	flags.PTS_DTS_flags = 3;
-	memcpy(buf, &flags, 2);
-	buf += 2;
-	
-	// pes head length
-	*buf++ = 10;
-	
-	// PTS & DTS
-	make_pes_pts_dts(buf, pts);
-
-	if ((19 + pes_len) > maxlen)
-	{
-		return -1;
-	}
-	
-	return 19;
 }
 
 /************************************************************************/
@@ -352,26 +275,26 @@ int lts_ps_stream(TEsFrame *frame, uint8_t *dest, int maxlen, TsProgramInfo *pi)
 	}
 
 	// 获得唯一的stream_id
-	stream_id = get_pes_stream_id(pi->prog[0].stream[frame->stream_number].type, 0, frame->stream_number);
+	stream_id = lts_pes_stream_id(pi->prog[0].stream[frame->stream_number].type, 0, frame->stream_number);
 
 	// 分别拷贝pes包头和es数据
 	pes_num = (flen + PES_LEN - 1) / PES_LEN;
 	for (i = 0; i < pes_num; i++)
 	{
-		int pes_len = (i == pes_num - 1) ? (flen - PES_LEN * i) : PES_LEN;
+		int es_len = (i == pes_num - 1) ? (flen - PES_LEN * i) : PES_LEN;
 
-		ret = gen_pes_head_with_pts_dts(pes_len, stream_id, pts, dest + ps_len, maxlen - ps_len);
+		ret = lts_pes_make_header(stream_id, pts, es_len, dest + ps_len, maxlen - ps_len);
 		if (ret < 0)
 		{
 			return -1;
 		}
 		
-		memcpy(dest + ps_len + ret, fdata + PES_LEN * i, pes_len);
+		memcpy(dest + ps_len + ret, fdata + PES_LEN * i, es_len);
 
 		if (segcb)
-			segcb(dest + ps_len, pes_len + ret, ctx);
+			segcb(dest + ps_len, es_len + ret, ctx);
 
-		ps_len += (pes_len + ret);
+		ps_len += (es_len + ret);
 	}
 
 	return ps_len;

@@ -25,21 +25,6 @@ static int get_ts_payload_offset(uint8_t *ts_pack)
 	return payload_offset;
 }
 
-static int get_pes_head_len(uint8_t *pes)
-{
-	int pes_head_len = 0;
-
-	if (pes[0] == 0 && pes[1] == 0 && pes[2] == 1)
-	{
-		if ((pes[3] & 0xC0) || (pes[3] & 0xE0))
-		{
-			pes_head_len = 9 + pes[8];
-		}
-	}
-
-	return pes_head_len;
-}
-
 static void get_ts_pcr(uint8_t *ts_pack, uint64_t *pcr)
 {
 	ts_header *ts = (ts_header *)ts_pack;
@@ -73,7 +58,7 @@ static void get_ts_es(TDemux *handle, uint8_t *ts_pack)
 	// 计算PES包头长度
 	if (handle->pes_head_len <= 0)
 	{
-		handle->pes_head_len = get_pes_head_len(ts_pack + payload_offset);
+		handle->pes_head_len = lts_pes_parse_header(ts_pack + payload_offset, payload_len, NULL, NULL, NULL);
 	}
 
 	// 去除PES包头

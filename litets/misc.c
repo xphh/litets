@@ -2,6 +2,41 @@
 #include <string.h>
 #include <malloc.h>
 
+int lts_is_video(int type)
+{
+	switch (type)
+	{
+	case STREAM_TYPE_VIDEO_MPEG1:
+	case STREAM_TYPE_VIDEO_MPEG2:
+	case STREAM_TYPE_VIDEO_MPEG4:
+	case STREAM_TYPE_VIDEO_H264:
+	case STREAM_TYPE_VIDEO_HEVC:
+	case STREAM_TYPE_VIDEO_CAVS:
+	case STREAM_TYPE_VIDEO_VC1:
+	case STREAM_TYPE_VIDEO_DIRAC:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+int lts_is_audio(int type)
+{
+	switch (type)
+	{
+	case STREAM_TYPE_AUDIO_MPEG1:
+	case STREAM_TYPE_AUDIO_MPEG2:
+	case STREAM_TYPE_AUDIO_AAC:
+	case STREAM_TYPE_AUDIO_AAC_LATM:
+	case STREAM_TYPE_AUDIO_AC3:
+	case STREAM_TYPE_AUDIO_DTS:
+	case STREAM_TYPE_AUDIO_TRUEHD:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
 #define DEFAULT_BUF_SIZE	(256<<10)
 
 int lts_buffer_handle(TBufferHandler *handler)
