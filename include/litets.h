@@ -131,9 +131,11 @@ typedef struct
 {
 	TsProgramInfo info;		// 节目信息
 	int is_pes;				// 属于数据，不是PSI
+	int pid;				// 当前包的PID
 	int program_no;			// 当前包所属的节目号
 	int stream_no;			// 当前包所属的流号
 	uint64_t pts;			// 当前包的时间戳
+	uint64_t pes_pts;		// 当前PES的时间戳
 	uint8_t *pack_ptr;		// 解出一包的首地址
 	int pack_len;			// 解出一包的长度
 	uint8_t *es_ptr;		// ES数据首地址

@@ -58,7 +58,7 @@ static void get_ts_es(TDemux *handle, uint8_t *ts_pack)
 	// 计算PES包头长度
 	if (handle->pes_head_len <= 0)
 	{
-		handle->pes_head_len = lts_pes_parse_header(ts_pack + payload_offset, payload_len, NULL, NULL, NULL);
+		handle->pes_head_len = lts_pes_parse_header(ts_pack + payload_offset, payload_len, NULL, &handle->pes_pts, NULL);
 	}
 
 	// 去除PES包头
@@ -92,6 +92,7 @@ static int handle_ts_pack(TDemux *handle, uint8_t *ts_pack)
 	int i;
 	ts_header *ts = (ts_header *)ts_pack;
 	int PID = CHAR_TO_LENGTH(ts->head.PID_high5, ts->head.PID_low8);
+	handle->pid = PID;
 
 	// 如果是PAT表，则更新handle
 	// 不支持过长的PAT或PMT表

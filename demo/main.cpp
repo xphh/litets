@@ -50,7 +50,7 @@ static int streaming_output(uint8_t *buf, int size, void *context)
 
 	printf("[%d] type[%02x] frame len = %d\n", g_frame_count, data_ptr[4], data_len);
 
-	// ¼òµ¥ÈÏÎªĞ¡ÓÚ100×Ö½ÚµÄÖ¡ÊÇSPS¡¢PPSµÈ·ÇÊı¾İÖ¡¡£ÕıÊ½Ê¹ÓÃÓ¦¸ù¾İH264Ö¡ÀàĞÍÑÏ¸ñÅĞ¶Ï¡£
+	// ç®€å•è®¤ä¸ºå°äº100å­—èŠ‚çš„å¸§æ˜¯SPSã€PPSç­‰éæ•°æ®å¸§ã€‚æ­£å¼ä½¿ç”¨åº”æ ¹æ®H264å¸§ç±»å‹ä¸¥æ ¼åˆ¤æ–­ã€‚
 	if (data_len < 100)
 	{
 		is_key = 1;
@@ -65,8 +65,8 @@ static int streaming_output(uint8_t *buf, int size, void *context)
 	es.stream_number = 0;
 	es.frame = data_ptr;
 	es.length = data_len;
-	es.is_key = is_key;					// ÕâÀï¼òµ¥´¦Àí£¬ÈÏÎªĞÅÏ¢Ö¡£¨·ÇÊı¾İÖ¡£©Îª¹Ø¼üÖ¡¡£
-	es.pts = 3600L * g_frame_count;		// Ê¾ÀıÖĞ°´Ö¡ÂÊÎª25fpsÀÛ¼ÆÊ±¼ä´Á¡£ÕıÊ½Ê¹ÓÃÓ¦¸ù¾İÖ¡Êµ¼ÊµÄÊ±¼ä´ÁÌîĞ´¡£
+	es.is_key = is_key;					// è¿™é‡Œç®€å•å¤„ç†ï¼Œè®¤ä¸ºä¿¡æ¯å¸§ï¼ˆéæ•°æ®å¸§ï¼‰ä¸ºå…³é”®å¸§ã€‚
+	es.pts = 3600L * g_frame_count;		// ç¤ºä¾‹ä¸­æŒ‰å¸§ç‡ä¸º25fpsç´¯è®¡æ—¶é—´æˆ³ã€‚æ­£å¼ä½¿ç”¨åº”æ ¹æ®å¸§å®é™…çš„æ—¶é—´æˆ³å¡«å†™ã€‚
 	es.ps_pes_length = 8000;
 
 	int outlen = 0;
@@ -209,12 +209,83 @@ void do_decoding(const char *filename)
 	fclose(g_out_fp);
 }
 
+void do_ts_probe(const char *filename) {
+	g_in_fp = fopen(filename, "rb");
+	if (!g_in_fp)
+	{
+		printf("read file failed!\n");
+		return;
+	}
+
+	char outfile[256] = {0};
+	sprintf(outfile, "%s.txt", filename);
+
+	g_out_fp = fopen(outfile, "w");
+	if (!g_out_fp)
+	{
+		printf("open output file failed!\n");
+		return;
+	}
+
+	uint8_t buf[188];
+	TDemux dec = {0};
+	char msg[8192] = {0};
+
+	while (1) {
+		int ret = fread(buf, 1, 188, g_in_fp);
+		if (ret < 188) {
+			printf("read EOF.\n");
+			break;
+		}
+
+		ret = lts_ts_demux(&dec, buf, 188);
+		if (ret < 0) {
+			printf("lts_ts_demux failed!\n");
+			break;
+		}
+
+		if (dec.is_pes) {
+			snprintf(msg, sizeof(msg),
+					"PES<%04x> [%d:%d] pts = %lld / %lld\r\n",
+					dec.pid, dec.program_no, dec.stream_no,
+					dec.pts, dec.pes_pts);
+		} else {
+			snprintf(msg, sizeof(msg), "PSI<%04x>\r\n", dec.pid);
+		}
+
+		printf(msg);
+		fprintf(g_out_fp, msg);
+	}
+
+	snprintf(msg, sizeof(msg), "\r\nProgram num = %d\r\n",
+			dec.info.program_num);
+	for (int i = 0; i < dec.info.program_num; i++) {
+		TsProgramSpec *prog = &dec.info.prog[i];
+		snprintf(msg, sizeof(msg),
+				"%s  PMT[%04x] Stream num = %d\r\n",
+				msg, prog->pmt_pid, prog->stream_num);
+		for (int k = 0; k < prog->stream_num; k++) {
+			TsStreamSpec *strm = &prog->stream[k];
+			snprintf(msg, sizeof(msg),
+					"%s    Type[%02x] StreamID[%d] PID[%04x]\r\n",
+					msg, strm->type, strm->stream_id, strm->es_pid);
+		}
+	}
+	printf(msg);
+	fprintf(g_out_fp, msg);
+
+	fclose(g_in_fp);
+
+	fclose(g_out_fp);
+}
+
 void show_usage(const char *name)
 {
 	printf("usage:\n");
 	printf("  for ts streaming: %s -ts input_file\n", name);
 	printf("  for ps streaming: %s -ps input_file\n", name);
 	printf("  for     demuxing: %s -d  input_file\n", name);
+	printf("  for     ts probe: %s -tp input_file\n", name);
 	getchar();
 }
 
@@ -241,6 +312,10 @@ int main(int argc, const char *argv[])
 	else if (strcmp(cmd, "-d") == 0)
 	{
 		do_decoding(input_file);
+	}
+	else if (strcmp(cmd, "-tp") == 0)
+	{
+		do_ts_probe(input_file);
 	}
 	else
 	{
