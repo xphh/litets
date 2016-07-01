@@ -85,7 +85,7 @@ static int handle_map(TDemux *handle, uint8_t *buf, int len)
 			
 			pos += (sizeof(ps_map_es) + es_info_len);
 
-			// Èç¹ûÊôÓÚÒôÆµ»òÊÓÆµ
+			// å¦‚æžœå±žäºŽéŸ³é¢‘æˆ–è§†é¢‘
 			if ((mes->es_id & 0xC0) == 0xC0 || (mes->es_id & 0xE0) == 0xE0)
 			{
 				
@@ -118,7 +118,7 @@ static int handle_pes(TDemux *handle, uint8_t *buf, int len)
 		int pes_head_len = lts_pes_parse_header(buf, len, &stream_id, &pts, &es_len);
 		if (pes_head_len > 0)
 		{
-			// ÅÐ¶ÏÊÇ·ñÊÇmap±íÖÐµÄes
+			// åˆ¤æ–­æ˜¯å¦æ˜¯mapè¡¨ä¸­çš„es
 			if (handle->info.program_num == 1)
 			{
 				int i;
@@ -126,7 +126,7 @@ static int handle_pes(TDemux *handle, uint8_t *buf, int len)
 				{
 					if (stream_id == handle->info.prog[0].stream[i].stream_id)
 					{
-						// ÊÇPES°ü£¬ÌîÐ´½ÚÄ¿ºÅºÍÁ÷ºÅ£¬ÒÔ¼°ÆäËûÐÅÏ¢
+						// æ˜¯PESåŒ…ï¼Œå¡«å†™èŠ‚ç›®å·å’Œæµå·ï¼Œä»¥åŠå…¶ä»–ä¿¡æ¯
 						handle->is_pes = 1;
 						handle->program_no = 0;
 						handle->stream_no = i;
@@ -198,26 +198,26 @@ stream_id	stream coding
 1111 11xx	reserved data stream
 1111 1111	program_stream_directory
 */
-			// PS stream_id±ØÐë´óÓÚ0xB9
+			// PS stream_idå¿…é¡»å¤§äºŽ0xB9
 			if (type < 0xB9)
 			{
 				continue;
 			}
-			// Èç¹û»¹Ã»ÕÒµ½psÍ·
+			// å¦‚æžœè¿˜æ²¡æ‰¾åˆ°pså¤´
 			if (!handle->ps_started)
 			{
-				// Èç¹ûÕâÒ»°ü²»ÊÇpsÍ·
+				// å¦‚æžœè¿™ä¸€åŒ…ä¸æ˜¯pså¤´
 				if (type != 0xBA)
 				{
-					// ÄÇÃ´ÂÔ¹ý£¬¼ÌÐøÍùÏÂËÑÑ°
+					// é‚£ä¹ˆç•¥è¿‡ï¼Œç»§ç»­å¾€ä¸‹æœå¯»
 					continue;
 				}
 
-				// Ö±µ½ÕÒµ½psÍ·
+				// ç›´åˆ°æ‰¾åˆ°pså¤´
 				handle->ps_started = 1;
 			}
 
-			// Í¬²½
+			// åŒæ­¥
 			if (handle->sync_only)
 			{
 				switch (type)
@@ -238,7 +238,7 @@ stream_id	stream coding
 					break;
 				}
 			}
-			// ½â¸´ÓÃ£¬½â³öÏêÏ¸µÄÃ½ÌåÐÅÏ¢
+			// è§£å¤ç”¨ï¼Œè§£å‡ºè¯¦ç»†çš„åª’ä½“ä¿¡æ¯
 			else
 			{
 				switch (type)
@@ -270,7 +270,7 @@ stream_id	stream coding
 				}
 			}
 
-			// ½â³öÒ»°ü¾Í·µ»Ø
+			// è§£å‡ºä¸€åŒ…å°±è¿”å›ž
 			break;
 		}
 	}
@@ -279,7 +279,7 @@ stream_id	stream coding
 		return -1;
 	}
 
-	// Èç¹û³¬¹ýÊäÈë³¤¶È£¬·µ»Ø0£¬ÏÂ´ÎÔÙ½âÎö
+	// å¦‚æžœè¶…è¿‡è¾“å…¥é•¿åº¦ï¼Œè¿”å›ž0ï¼Œä¸‹æ¬¡å†è§£æž
 	if (i + ret_len > len)
 	{
 		return 0;

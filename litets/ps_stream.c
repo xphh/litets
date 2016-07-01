@@ -71,7 +71,7 @@ static void init_default_headers()
 }
 
 /************************************************************************/
-/* ÉèÖÃ¸÷ÖÖÍ·²¿                                                         */
+/* è®¾ç½®å„ç§å¤´éƒ¨                                                         */
 /************************************************************************/
 static int set_pack_header(uint64_t pts, uint8_t *dest, int maxlen, int mux_rate)
 {
@@ -114,7 +114,7 @@ static int set_sys_header(TsProgramSpec *spec, uint8_t *dest, int maxlen, int ra
 	memcpy(hdr, &g_sys_header, sizeof(g_sys_header));
 	memcpy(tbl, &g_sys_streams, sizeof(g_sys_streams));
 
-	// ÊıÒ»ÏÂÓĞ¼¸ÌõÒôÆµÁ÷¼¸ÌõÊÓÆµÁ÷
+	// æ•°ä¸€ä¸‹æœ‰å‡ æ¡éŸ³é¢‘æµå‡ æ¡è§†é¢‘æµ
 	do 
 	{
 		int i;
@@ -184,7 +184,7 @@ static int set_psm(TsProgramSpec *spec, uint8_t *dest, int maxlen)
 }
 
 /************************************************************************/
-/* ¶ÔÍâ½Ó¿Ú                                                             */
+/* å¯¹å¤–æ¥å£                                                             */
 /************************************************************************/
 int lts_ps_stream(TEsFrame *frame, uint8_t *dest, int maxlen, TsProgramInfo *pi)
 {
@@ -217,13 +217,13 @@ int lts_ps_stream(TEsFrame *frame, uint8_t *dest, int maxlen, TsProgramInfo *pi)
 	segcb = frame->segcb;
 	ctx = frame->ctx;
 
-	// PS½ÚÄ¿ÊıÖ»ÄÜÎª1
+	// PSèŠ‚ç›®æ•°åªèƒ½ä¸º1
 	if (pi->program_num != 1)
 	{
 		return -1;
 	}
 	
-	// ÉèÖÃpsÍ·
+	// è®¾ç½®pså¤´
 	ret = set_pack_header(frame->pts, dest + ps_len, maxlen - ps_len, mux_rate);
 	if (ret < 0)
 	{
@@ -234,10 +234,10 @@ int lts_ps_stream(TEsFrame *frame, uint8_t *dest, int maxlen, TsProgramInfo *pi)
 		segcb(dest + ps_len, ret, ctx);
 	ps_len += ret;
 
-	// Ö»ÓĞÍâ²¿ÉèÖÃÁËis_key£¬²Å»áÌîPS¸÷ÖÖÍ·²¿
+	// åªæœ‰å¤–éƒ¨è®¾ç½®äº†is_keyï¼Œæ‰ä¼šå¡«PSå„ç§å¤´éƒ¨
 	if (frame->is_key)
 	{
-		// ÉèÖÃÏµÍ³Í·
+		// è®¾ç½®ç³»ç»Ÿå¤´
 		ret = set_sys_header(spec, dest + ps_len, maxlen - ps_len, mux_rate);
 		if (ret < 0)
 		{
@@ -248,7 +248,7 @@ int lts_ps_stream(TEsFrame *frame, uint8_t *dest, int maxlen, TsProgramInfo *pi)
 			segcb(dest + ps_len, ret, ctx);
 		ps_len += ret;
 
-		// ÉèÖÃPSM
+		// è®¾ç½®PSM
 		ret = set_psm(spec, dest + ps_len, maxlen - ps_len);
 		if (ret < 0)
 		{
@@ -260,7 +260,7 @@ int lts_ps_stream(TEsFrame *frame, uint8_t *dest, int maxlen, TsProgramInfo *pi)
 		ps_len += ret;
 	}
 
-	// ½ÓÏÂÈ¥¼ÓÈëPES°ü
+	// æ¥ä¸‹å»åŠ å…¥PESåŒ…
 	fdata = frame->frame;
 	flen = frame->length;
 	pts = frame->pts;
@@ -274,10 +274,10 @@ int lts_ps_stream(TEsFrame *frame, uint8_t *dest, int maxlen, TsProgramInfo *pi)
 		PES_LEN = MAX_PES_LENGTH;
 	}
 
-	// »ñµÃÎ¨Ò»µÄstream_id
+	// è·å¾—å”¯ä¸€çš„stream_id
 	stream_id = lts_pes_stream_id(pi->prog[0].stream[frame->stream_number].type, 0, frame->stream_number);
 
-	// ·Ö±ğ¿½±´pes°üÍ·ºÍesÊı¾İ
+	// åˆ†åˆ«æ‹·è´pesåŒ…å¤´å’Œesæ•°æ®
 	pes_num = (flen + PES_LEN - 1) / PES_LEN;
 	for (i = 0; i < pes_num; i++)
 	{

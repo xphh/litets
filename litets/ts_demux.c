@@ -55,13 +55,13 @@ static void get_ts_es(TDemux *handle, uint8_t *ts_pack)
 	payload_offset = get_ts_payload_offset(ts_pack);
 	payload_len = 188 - payload_offset;
 
-	// ¼ÆËãPES°üÍ·³¤¶È
+	// è®¡ç®—PESåŒ…å¤´é•¿åº¦
 	if (handle->pes_head_len <= 0)
 	{
 		handle->pes_head_len = lts_pes_parse_header(ts_pack + payload_offset, payload_len, NULL, NULL, NULL);
 	}
 
-	// È¥³ıPES°üÍ·
+	// å»é™¤PESåŒ…å¤´
 	if (handle->pes_head_len > 0)
 	{
 		if (handle->pes_head_len <= payload_len)
@@ -93,8 +93,8 @@ static int handle_ts_pack(TDemux *handle, uint8_t *ts_pack)
 	ts_header *ts = (ts_header *)ts_pack;
 	int PID = CHAR_TO_LENGTH(ts->head.PID_high5, ts->head.PID_low8);
 
-	// Èç¹ûÊÇPAT±í£¬Ôò¸üĞÂhandle
-	// ²»Ö§³Ö¹ı³¤µÄPAT»òPMT±í
+	// å¦‚æœæ˜¯PATè¡¨ï¼Œåˆ™æ›´æ–°handle
+	// ä¸æ”¯æŒè¿‡é•¿çš„PATæˆ–PMTè¡¨
 	if (PID == 0)
 	{
 		int payload_offset = get_ts_payload_offset(ts_pack) + 1;
@@ -115,7 +115,7 @@ static int handle_ts_pack(TDemux *handle, uint8_t *ts_pack)
 
 				for (i = 0; i < pnum; i++)
 				{
-					// ×î¶àÖ§³ÖMAX_PROGRAM_NUMÕÅPMT±í
+					// æœ€å¤šæ”¯æŒMAX_PROGRAM_NUMå¼ PMTè¡¨
 					if (i >= MAX_PROGRAM_NUM)
 						break;
 
@@ -128,7 +128,7 @@ static int handle_ts_pack(TDemux *handle, uint8_t *ts_pack)
 		return 0;
 	}
 
-	// ²éÕÒÊÇ·ñÊÇÄ³¸ö½ÚÄ¿µÄPMT±í
+	// æŸ¥æ‰¾æ˜¯å¦æ˜¯æŸä¸ªèŠ‚ç›®çš„PMTè¡¨
 	for (i = 0; i < handle->info.program_num; i++)
 	{
 		if (PID == handle->info.prog[i].pmt_pid)
@@ -165,7 +165,7 @@ static int handle_ts_pack(TDemux *handle, uint8_t *ts_pack)
 		}
 	}
 
-	// ²éÕÒÊÇ·ñÊÇÄ³¸ö½ÚÄ¿µÄÄ³ÌõÁ÷
+	// æŸ¥æ‰¾æ˜¯å¦æ˜¯æŸä¸ªèŠ‚ç›®çš„æŸæ¡æµ
 	for (i = 0; i < handle->info.program_num; i++)
 	{
 		int sn;
@@ -183,7 +183,7 @@ static int handle_ts_pack(TDemux *handle, uint8_t *ts_pack)
 		}
 	}
 
-	// Î´ÕÒµ½
+	// æœªæ‰¾åˆ°
 	return 0;
 }
 
@@ -201,7 +201,7 @@ int lts_ts_demux(TDemux *handle, uint8_t *ts_buf, int len)
 	handle->pack_ptr = NULL;
 	handle->pack_len = 0;
 
-	// Ö»½â³ö×î¿ªÍ·Ò»°ü
+	// åªè§£å‡ºæœ€å¼€å¤´ä¸€åŒ…
 	for (i = 0; i < len; i++)
 	{
 		if (ts_buf[i] == 0x47)

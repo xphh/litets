@@ -2,8 +2,8 @@
 #define __LITETS_STREAMDEF_LE_H__
 
 #ifdef WIN32
-#pragma pack(push) //±£´æ¶ÔÆë×´Ì¬
-#pragma pack(1)//Éè¶¨Îª1×Ö½Ú¶ÔÆë
+#pragma pack(push) //ä¿å­˜å¯¹é½çŠ¶æ€
+#pragma pack(1)//è®¾å®šä¸º1å­—èŠ‚å¯¹é½
 #define __attribute__(x)
 #endif
 
@@ -199,7 +199,7 @@ typedef struct
 ps_map_es;
 
 #ifdef _MSC_VER
-#pragma pack(pop)//»Ö¸´¶ÔÆë×´Ì¬
+#pragma pack(pop)//æ¢å¤å¯¹é½çŠ¶æ€
 #endif
 
 #endif //__LITETS_STREAMDEF_LE_H__

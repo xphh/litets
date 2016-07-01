@@ -5,13 +5,13 @@
 #define TS_STREAM_ID		(0x0010)
 #define TS_PMT_ID_BASE		(0x1000)
 
-// È·¶¨Î¨Ò»µÄPMT PID
+// ç¡®å®šå”¯ä¸€çš„PMT PID
 static uint16_t get_ts_pmt_id(int program_number)
 {
 	return TS_PMT_ID_BASE + (uint16_t)program_number;
 }
 
-// È·¶¨Î¨Ò»µÄÃ½ÌåÁ÷PID
+// ç¡®å®šå”¯ä¸€çš„åª’ä½“æµPID
 static uint16_t get_ts_stream_id(int program_number, int stream_number)
 {
 	return 0x0100 + program_number * MAX_STREAM_NUM + stream_number;
@@ -43,7 +43,7 @@ static uint32_t CRC_encode(uint8_t* data, int len)
 	return CRC;
 }
 
-// Éú³ÉTSÍ·ÖĞ×ÔÊÊÓ¦ÇøµÄPCR×Ö¶Î
+// ç”ŸæˆTSå¤´ä¸­è‡ªé€‚åº”åŒºçš„PCRå­—æ®µ
 static void make_ts_pcr(char *buff, uint64_t ts)
 {
 	buff[0] = (uint8_t)(ts >> 25);
@@ -54,29 +54,29 @@ static void make_ts_pcr(char *buff, uint64_t ts)
 	buff[5] = 0x00;
 }
 
-// Éú³ÉÒ»¸ö±ê×¼µÄTSÍ·²¿
-// Ä¿Ç°µÄÊµÏÖ, ¶¼´øadaptation_field
+// ç”Ÿæˆä¸€ä¸ªæ ‡å‡†çš„TSå¤´éƒ¨
+// ç›®å‰çš„å®ç°, éƒ½å¸¦adaptation_field
 static int gen_ts_packet_header(char *pkt, uint16_t PID, int payload_len)
 {
 	ts_header *header = (ts_header *)pkt;
 
 	header->head.sync_byte = 0x47;
 	header->head.transport_error_indicator = 0;
-	header->head.payload_unit_start_indicator = 1;			// Ä¬ÈÏº¬µÚÒ»°ü
+	header->head.payload_unit_start_indicator = 1;			// é»˜è®¤å«ç¬¬ä¸€åŒ…
 	header->head.transport_priority = 0;
 	header->head.PID_high5 = (uint8_t)(PID >> 8) & 0x1f;
 	header->head.PID_low8 = (uint8_t)PID;
 	header->head.transport_scrambling_control = 0;
-	header->head.adaptation_field_control = 3;				// ¹Ì¶¨Îª3, ±íÊ¾ÓĞ×ÔÊÊÓ¦ÇøºÍ¸ºÔØ
+	header->head.adaptation_field_control = 3;				// å›ºå®šä¸º3, è¡¨ç¤ºæœ‰è‡ªé€‚åº”åŒºå’Œè´Ÿè½½
 	header->head.continuity_counter = 0;
 
-	// ×ÔÊÊÓ¦Çø³¤¶È¸ù¾İÊµ¼ÊµÄ¸ºÔØ³¤¶Èµ÷½Ú, Ê¹µÃÌîÂú188¸ö×Ö½Ú
+	// è‡ªé€‚åº”åŒºé•¿åº¦æ ¹æ®å®é™…çš„è´Ÿè½½é•¿åº¦è°ƒèŠ‚, ä½¿å¾—å¡«æ»¡188ä¸ªå­—èŠ‚
 	header->adaptation_field_length = 188 - 4 - 1 - payload_len;
 
 	header->flags.discontinuity_indicator = 0;
 	header->flags.random_access_indicator = 0;
 	header->flags.elementary_stream_priority_indicator = 0;
-	header->flags.PCR_flag = 0;								// Ä¬ÈÏÎŞPCR, ºóÃæÊ¹ÓÃÊ±¸ù¾İĞèÒª¹¹Ôì
+	header->flags.PCR_flag = 0;								// é»˜è®¤æ— PCR, åé¢ä½¿ç”¨æ—¶æ ¹æ®éœ€è¦æ„é€ 
 	header->flags.OPCR_flag = 0;
 	header->flags.splicing_point_flag = 0;
 	header->flags.transport_private_data_flag = 0;
@@ -88,24 +88,24 @@ static int gen_ts_packet_header(char *pkt, uint16_t PID, int payload_len)
 	return 188 - payload_len;
 }
 
-//ÉèÖÃTSµÄÁ¬Ğø¼ÆÊıÆ÷
+//è®¾ç½®TSçš„è¿ç»­è®¡æ•°å™¨
 static void set_ts_header_counter(char* pkt, int counter)
 {
 	ts_header* header = (ts_header*)pkt;
 	header->head.continuity_counter = counter & 0x0f;
 }
 
-// Éú³ÉÒ»¸öPATµÄTS°ü
+// ç”Ÿæˆä¸€ä¸ªPATçš„TSåŒ…
 static void gen_pat_ts_packet(char *pkt, TsProgramInfo *pi)
 {
-	// TSÁ÷IDÄ¿Ç°È¡¹Ì¶¨Öµ
+	// TSæµIDç›®å‰å–å›ºå®šå€¼
 	uint16_t PID = TS_STREAM_ID;
 
-	// ¼ÆËãPAT³¤¶È
+	// è®¡ç®—PATé•¿åº¦
 	int pat_len = sizeof(pat_section) + pi->program_num * sizeof(pat_map_array) + 4;
 	int pat_section_len = 5 + pi->program_num * sizeof(pat_map_array) + 4;
 
-	// Éú³ÉTSÍ·£¬ÕÒµ½PAT¿ªÊ¼Ğ´µÄÎ»ÖÃ£¬PSIµÄTSPIDÎª0
+	// ç”ŸæˆTSå¤´ï¼Œæ‰¾åˆ°PATå¼€å§‹å†™çš„ä½ç½®ï¼ŒPSIçš„TSPIDä¸º0
 	int start_pos = gen_ts_packet_header(pkt, 0, pat_len + 1);
 	
 	char *pointer_field;
@@ -144,7 +144,7 @@ static void gen_pat_ts_packet(char *pkt, TsProgramInfo *pi)
 	for (i = 0; i < pi->program_num; i++)
 	{
 		int program_number = i + 1;
-		// PMT-PID±ØĞëÓëºóÃæµÄPMTÖĞÒ»ÖÂ
+		// PMT-PIDå¿…é¡»ä¸åé¢çš„PMTä¸­ä¸€è‡´
 		int pmt_id = get_ts_pmt_id(program_number);
 		map[i].program_number_high8 = (uint8_t)(program_number >> 8);
 		map[i].program_number_low8 = (uint8_t)program_number;
@@ -163,18 +163,18 @@ static void gen_pat_ts_packet(char *pkt, TsProgramInfo *pi)
 	crc32ch[3] = (uint8_t)crc32;
 }
 
-// Éú³ÉÒ»¸öPMTµÄTS°ü
+// ç”Ÿæˆä¸€ä¸ªPMTçš„TSåŒ…
 static void gen_pmt_ts_packet(char *pkt, int pno, TsProgramSpec *ps)
 {
-	// TS-PIDÈ¡PMT-PID, ±ØĞëÓëPATÖĞµÄPMT-PIDÒ»ÖÂ
+	// TS-PIDå–PMT-PID, å¿…é¡»ä¸PATä¸­çš„PMT-PIDä¸€è‡´
 	int program_number = pno + 1;
 	uint16_t PID = get_ts_pmt_id(program_number);
 
-	// ¼ÆËãPMT³¤¶È
+	// è®¡ç®—PMTé•¿åº¦
 	int pmt_len = sizeof(pmt_section) + ps->stream_num * sizeof(pmt_stream_array) + 4;
 	int pmt_section_len = 9 + ps->stream_num * sizeof(pmt_stream_array) + 4;
 
-	// Éú³ÉTSÍ·£¬ÕÒµ½PMT¿ªÊ¼Ğ´µÄÎ»ÖÃ
+	// ç”ŸæˆTSå¤´ï¼Œæ‰¾åˆ°PMTå¼€å§‹å†™çš„ä½ç½®
 	int start_pos = gen_ts_packet_header(pkt, PID, pmt_len + 1);
 
 	char *pointer_field;
@@ -183,9 +183,9 @@ static void gen_pmt_ts_packet(char *pkt, int pno, TsProgramSpec *ps)
 	uint8_t *crc32ch;
 	uint32_t crc32;
 	int i;
-	uint16_t PCR_PID = get_ts_stream_id(pno, 0); // Ä¬ÈÏ»ù×¼Á÷ID
+	uint16_t PCR_PID = get_ts_stream_id(pno, 0); // é»˜è®¤åŸºå‡†æµID
 
-	// Éè¶¨»ù×¼Á÷ID
+	// è®¾å®šåŸºå‡†æµID
 	if (0 <= ps->key_stream_id && ps->key_stream_id < ps->stream_num)
 		PCR_PID = get_ts_stream_id(pno, ps->key_stream_id);
 	
@@ -222,7 +222,7 @@ static void gen_pmt_ts_packet(char *pkt, int pno, TsProgramSpec *ps)
 	start_pos += ps->stream_num * sizeof(pmt_stream_array);
 	for (i = 0; i < ps->stream_num; i++)
 	{
-		// ÊµÌåÁ÷PID±ØĞëÓëºóÃæÊµÌåÁ÷µÄTS-PIDÏàÍ¬
+		// å®ä½“æµPIDå¿…é¡»ä¸åé¢å®ä½“æµçš„TS-PIDç›¸åŒ
 		uint16_t elementary_PID = get_ts_stream_id(pno, i);
 		strm[i].stream_type = ps->stream[i].type;
 		strm[i].reserved1 = 7;
@@ -243,7 +243,7 @@ static void gen_pmt_ts_packet(char *pkt, int pno, TsProgramSpec *ps)
 	crc32ch[3] = (uint8_t)crc32;
 }
 
-// ÉèÖÃPCR, Í¬Ê±payload_unit_start_indicatorÉèÖÃÎª1
+// è®¾ç½®PCR, åŒæ—¶payload_unit_start_indicatorè®¾ç½®ä¸º1
 static void set_ts_header_with_pcr(char *pkt, uint64_t ts)
 {
 	ts_header *header = (ts_header *)pkt;
@@ -252,21 +252,21 @@ static void set_ts_header_with_pcr(char *pkt, uint64_t ts)
 	make_ts_pcr(pkt + 6, ts);
 }
 
-// ÉèÖÃ²»º¬PCR, Í¬Ê±payload_unit_start_indicatorÉèÖÃÎª0
+// è®¾ç½®ä¸å«PCR, åŒæ—¶payload_unit_start_indicatorè®¾ç½®ä¸º0
 static void set_ts_header_without_pcr(char *pkt)
 {
 	ts_header *header = (ts_header *)pkt;
 	header->head.payload_unit_start_indicator = 0;
 }
 
-// ½«Ò»Ö¡Éú³ÉÈô¸ÉTS°ü, ·µ»ØÉú³ÉµÄ×Ö½ÚÊı
+// å°†ä¸€å¸§ç”Ÿæˆè‹¥å¹²TSåŒ…, è¿”å›ç”Ÿæˆçš„å­—èŠ‚æ•°
 static int gen_pes_ts_packets(TEsFrame *frame, char *dest, int maxlen, TsProgramInfo *pi)
 {
 	uint8_t pes_header[19];
 	int pes_len;
 	char *ptr = dest;
 	int start_pos;
-	// ÊµÌåÁ÷µÄTS-PID±ØĞëÓëPMTÖĞµÄÒ»ÖÂ
+	// å®ä½“æµçš„TS-PIDå¿…é¡»ä¸PMTä¸­çš„ä¸€è‡´
 	uint16_t PID = get_ts_stream_id(frame->program_number, frame->stream_number);
 	int total_length = 0;
 	TsStreamSpec *ss = &pi->prog[frame->program_number].stream[frame->stream_number];
@@ -281,7 +281,7 @@ static int gen_pes_ts_packets(TEsFrame *frame, char *dest, int maxlen, TsProgram
 	}
 	pes_len += frame->length;
 
-	// ¿ÉÒÔ·ÅÈëÒ»¸öTS°üÖĞ, ´øPCRµÄTSÍ·³¤¶ÈÎª12B
+	// å¯ä»¥æ”¾å…¥ä¸€ä¸ªTSåŒ…ä¸­, å¸¦PCRçš„TSå¤´é•¿åº¦ä¸º12B
 	if (pes_len <= 176/*188-12*/)
 	{
 		total_length = 188;
@@ -292,11 +292,11 @@ static int gen_pes_ts_packets(TEsFrame *frame, char *dest, int maxlen, TsProgram
 
 		start_pos = gen_ts_packet_header(ptr, PID, pes_len);
 		set_ts_header_with_pcr(ptr, frame->pts);
-		set_ts_header_counter(ptr, ss->continuity_counter++);//°ü¼ÆÊıÔö¼Ó
+		set_ts_header_counter(ptr, ss->continuity_counter++);//åŒ…è®¡æ•°å¢åŠ 
 		memcpy(ptr + start_pos, pes_header, 19);
 		memcpy(ptr + start_pos + 19, frame->frame, frame->length);
 	}
-	// ²»ÄÜ·ÅÈëÒ»°üÄÚ, ĞèÒª²ğ·Ö·ÅÈëºÃ¼¸¸öTS°ü
+	// ä¸èƒ½æ”¾å…¥ä¸€åŒ…å†…, éœ€è¦æ‹†åˆ†æ”¾å…¥å¥½å‡ ä¸ªTSåŒ…
 	else
 	{
 		int i;
@@ -310,16 +310,16 @@ static int gen_pes_ts_packets(TEsFrame *frame, char *dest, int maxlen, TsProgram
 			return -1;
 		}
 
-		// ÏÈ·ÅµÚÒ»°ü, ÒòÎª´øPCR, ËùÒÔTSÍ·²¿³¤12B
+		// å…ˆæ”¾ç¬¬ä¸€åŒ…, å› ä¸ºå¸¦PCR, æ‰€ä»¥TSå¤´éƒ¨é•¿12B
 		start_pos = gen_ts_packet_header(ptr, PID, 176);
 		set_ts_header_with_pcr(ptr, frame->pts);
-		set_ts_header_counter(ptr, ss->continuity_counter++);//°ü¼ÆÊıÔö¼Ó
+		set_ts_header_counter(ptr, ss->continuity_counter++);//åŒ…è®¡æ•°å¢åŠ 
 		memcpy(ptr + start_pos, pes_header, 19);
 		memcpy(ptr + start_pos + 19, fp, 176 - 19);
 		fp += (176 - 19);
 		ptr += 188;
 
-		// ·ÅÈëºóĞø°ü, ºóĞø°ü²»º¬PCR, ËùÒÔTSÍ·²¿Ö»ÓĞ6B
+		// æ”¾å…¥åç»­åŒ…, åç»­åŒ…ä¸å«PCR, æ‰€ä»¥TSå¤´éƒ¨åªæœ‰6B
 		for (i = 0; i < pack_num; i++)
 		{
 			int payload_len = 182;
@@ -330,7 +330,7 @@ static int gen_pes_ts_packets(TEsFrame *frame, char *dest, int maxlen, TsProgram
 
 			start_pos = gen_ts_packet_header(ptr, PID, payload_len);
 			set_ts_header_without_pcr(ptr);
-			set_ts_header_counter(ptr, ss->continuity_counter++);//°ü¼ÆÊıÔö¼Ó
+			set_ts_header_counter(ptr, ss->continuity_counter++);//åŒ…è®¡æ•°å¢åŠ 
 			memcpy(ptr + start_pos, fp, payload_len);
 			fp += payload_len;
 			ptr += 188;
@@ -341,9 +341,9 @@ static int gen_pes_ts_packets(TEsFrame *frame, char *dest, int maxlen, TsProgram
 }
 
 /************************************************************************/
-/* ¶ÔÍâ½Ó¿Ú, ½«Ò»Ö¡´ò°ü³ÉTSÁ÷, ·µ»ØTSÁ÷×Ö½ÚÊı(±Ø¶¨ÊÇ188µÄÕûÊı±¶)        */
+/* å¯¹å¤–æ¥å£, å°†ä¸€å¸§æ‰“åŒ…æˆTSæµ, è¿”å›TSæµå­—èŠ‚æ•°(å¿…å®šæ˜¯188çš„æ•´æ•°å€)        */
 /************************************************************************/
-// ×¢Òâ: pi->continuity_counterÊÇÈë²ÎÒ²ÊÇ³ö²Î, Ê¹ÓÃÕßĞèÒªÎ¬»¤Õâ¸ö¼ÆÊıÖµ
+// æ³¨æ„: pi->continuity_counteræ˜¯å…¥å‚ä¹Ÿæ˜¯å‡ºå‚, ä½¿ç”¨è€…éœ€è¦ç»´æŠ¤è¿™ä¸ªè®¡æ•°å€¼
 int lts_ts_stream(TEsFrame *frame, uint8_t *dest, int maxlen, TsProgramInfo *pi)
 {
 	int i;
@@ -362,7 +362,7 @@ int lts_ts_stream(TEsFrame *frame, uint8_t *dest, int maxlen, TsProgramInfo *pi)
 		return -1;
 	}
 
-	// Èç¹ûis_key==1, ÄÇÃ´¼ÓÈëPATºÍPMT
+	// å¦‚æœis_key==1, é‚£ä¹ˆåŠ å…¥PATå’ŒPMT
 	if (frame->is_key)
 	{
 		patpmt_len = 188 + 188 * pi->program_num;
@@ -383,7 +383,7 @@ int lts_ts_stream(TEsFrame *frame, uint8_t *dest, int maxlen, TsProgramInfo *pi)
 		pi->pat_pmt_counter++;
 	}
 
-	// Éú³ÉÊµÌåÁ÷µÄTS°ü
+	// ç”Ÿæˆå®ä½“æµçš„TSåŒ…
 	ret = gen_pes_ts_packets(frame, ptr, maxlen - patpmt_len, pi);
 	if (ret <= 0)
 	{

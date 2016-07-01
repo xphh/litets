@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 /************************************************************************/
-/* ÊµÌåÁ÷Ïà¹Ø¶¨Òå                                                       */
+/* å®ä½“æµç›¸å…³å®šä¹‰                                                       */
 /************************************************************************/
 #define STREAM_TYPE_VIDEO_MPEG1     0x01
 #define STREAM_TYPE_VIDEO_MPEG2     0x02
@@ -53,106 +53,106 @@ typedef void (*SEGCALLBACK)(uint8_t *buf, int len, void *ctx);
 #define MIN_PES_LENGTH	(1000)
 #define MAX_PES_LENGTH	(65000)
 
-// ÊµÌåÁ÷Ö¡ĞÅÏ¢
+// å®ä½“æµå¸§ä¿¡æ¯
 typedef struct
 {
-	int program_number; // ½ÚÄ¿±àºÅ£¬¾ÍÊÇTsProgramInfoÖĞprogÊı×éÏÂ±ê£¬¶ÔÓÚPS¸ÃÖµÖ»ÄÜÎª0
-	int stream_number;	// Á÷±àºÅ£¬¾ÍÊÇTsProgramSpecÖĞstreamÊı×éÏÂ±ê
-	uint8_t *frame;		// Ö¡Êı¾İ
-	int length;			// Ö¡³¤¶È
-	int is_key;			// µ±Ç°Ö¡TSÁ÷»¯Ê±ÊÇ·ñ´øPATºÍPMT
-	uint64_t pts;		// Ê±¼ä´Á, 90kHz
-	int ps_pes_length;	// ĞèÒªÇĞ·Ö³ÉPESµÄ³¤¶È£¬¸Ã²ÎÊıÖ»¶ÔPSÓĞĞ§£¬×î´ó²»ÄÜ³¬¹ıMAX_PES_LENGTH
-	SEGCALLBACK segcb;	// ¶ÔÓÚPS£¬µ±Éú³ÉÒ»¶ÎÊı¾İ£¨Í·²¿»òPES£©»Øµ÷£¬²»ÓÃ¿ÉÉèÎªNULL
-	void *ctx;			// »Øµ÷ÉÏÏÂÎÄ
+	int program_number; // èŠ‚ç›®ç¼–å·ï¼Œå°±æ˜¯TsProgramInfoä¸­progæ•°ç»„ä¸‹æ ‡ï¼Œå¯¹äºPSè¯¥å€¼åªèƒ½ä¸º0
+	int stream_number;	// æµç¼–å·ï¼Œå°±æ˜¯TsProgramSpecä¸­streamæ•°ç»„ä¸‹æ ‡
+	uint8_t *frame;		// å¸§æ•°æ®
+	int length;			// å¸§é•¿åº¦
+	int is_key;			// å½“å‰å¸§TSæµåŒ–æ—¶æ˜¯å¦å¸¦PATå’ŒPMT
+	uint64_t pts;		// æ—¶é—´æˆ³, 90kHz
+	int ps_pes_length;	// éœ€è¦åˆ‡åˆ†æˆPESçš„é•¿åº¦ï¼Œè¯¥å‚æ•°åªå¯¹PSæœ‰æ•ˆï¼Œæœ€å¤§ä¸èƒ½è¶…è¿‡MAX_PES_LENGTH
+	SEGCALLBACK segcb;	// å¯¹äºPSï¼Œå½“ç”Ÿæˆä¸€æ®µæ•°æ®ï¼ˆå¤´éƒ¨æˆ–PESï¼‰å›è°ƒï¼Œä¸ç”¨å¯è®¾ä¸ºNULL
+	void *ctx;			// å›è°ƒä¸Šä¸‹æ–‡
 } TEsFrame;
 
-// ÅĞ¶ÏÊÇ·ñÊÓÆµ
+// åˆ¤æ–­æ˜¯å¦è§†é¢‘
 int lts_is_video(int type);
-// ÅĞ¶ÏÊÇ·ñÒôÆµ
+// åˆ¤æ–­æ˜¯å¦éŸ³é¢‘
 int lts_is_audio(int type);
 
-// È·¶¨PESÖĞµÄstream_id
+// ç¡®å®šPESä¸­çš„stream_id
 uint8_t lts_pes_stream_id(int type, int program_number, int stream_number);
 
-// Éú³ÉPESÍ·²¿£¬·µ»ØÍ·²¿×Ü³¤¶È
+// ç”ŸæˆPESå¤´éƒ¨ï¼Œè¿”å›å¤´éƒ¨æ€»é•¿åº¦
 int lts_pes_make_header(uint8_t stream_id, uint64_t pts, int es_len, uint8_t *dest, int maxlen);
 
-// ½âÎöPESÍ·²¿³¤¶È£¬·µ»ØÍ·²¿×Ü³¤¶È
+// è§£æPESå¤´éƒ¨é•¿åº¦ï¼Œè¿”å›å¤´éƒ¨æ€»é•¿åº¦
 int lts_pes_parse_header(uint8_t *pes, int len, uint8_t *stream_id, uint64_t *pts, int *es_len);
 
 /************************************************************************/
-/* ½ÚÄ¿ĞÅÏ¢¶¨Òå                                                         */
+/* èŠ‚ç›®ä¿¡æ¯å®šä¹‰                                                         */
 /************************************************************************/
-// Ã¿ÌõÁ÷µÄÏêÇé
+// æ¯æ¡æµçš„è¯¦æƒ…
 typedef struct
 {
-	uint8_t type;			// [I]Ã½ÌåÀàĞÍ
-	uint8_t stream_id;		// [O]ÊµÌåÁ÷ID£¨ÓëPESÍ·²¿idÏàÍ¬£©
-	int es_pid;				// [O]ÊµÌåÁ÷µÄPID
-	int continuity_counter;	// [O] TS°üÍ·²¿µÄÁ¬Ğø¼ÆÊıÆ÷, Íâ²¿ĞèÒªÎ¬»¤Õâ¸ö¼ÆÊıÖµ, ±ØĞëÃ¿´Î´«ÈëÉÏ´Î´«³öµÄ¼ÆÊıÖµ
+	uint8_t type;			// [I]åª’ä½“ç±»å‹
+	uint8_t stream_id;		// [O]å®ä½“æµIDï¼ˆä¸PESå¤´éƒ¨idç›¸åŒï¼‰
+	int es_pid;				// [O]å®ä½“æµçš„PID
+	int continuity_counter;	// [O] TSåŒ…å¤´éƒ¨çš„è¿ç»­è®¡æ•°å™¨, å¤–éƒ¨éœ€è¦ç»´æŠ¤è¿™ä¸ªè®¡æ•°å€¼, å¿…é¡»æ¯æ¬¡ä¼ å…¥ä¸Šæ¬¡ä¼ å‡ºçš„è®¡æ•°å€¼
 } TsStreamSpec;
 
-// Ã¿¸ö½ÚÄ¿µÄÏêÇé
+// æ¯ä¸ªèŠ‚ç›®çš„è¯¦æƒ…
 #define MAX_STREAM_NUM		(4)
 
 typedef struct
 {
-	int stream_num;			// [I]Õâ¸ö½ÚÄ¿°üº¬µÄÁ÷¸öÊı
-	int key_stream_id;		// {I]»ù×¼Á÷±àºÅ
-	int pmt_pid;			// [O]Õâ¸ö½ÚÄ¿¶ÔÓ¦µÄPMT±íµÄPID£¨TS½âÂëÓÃ£©
-	int mux_rate;			// [O]Õâ¸ö½ÚÄ¿µÄÂëÂÊ£¬µ¥Î»Îª50×Ö½ÚÃ¿Ãë(PS±àÂëÓÃ)
+	int stream_num;			// [I]è¿™ä¸ªèŠ‚ç›®åŒ…å«çš„æµä¸ªæ•°
+	int key_stream_id;		// {I]åŸºå‡†æµç¼–å·
+	int pmt_pid;			// [O]è¿™ä¸ªèŠ‚ç›®å¯¹åº”çš„PMTè¡¨çš„PIDï¼ˆTSè§£ç ç”¨ï¼‰
+	int mux_rate;			// [O]è¿™ä¸ªèŠ‚ç›®çš„ç ç‡ï¼Œå•ä½ä¸º50å­—èŠ‚æ¯ç§’(PSç¼–ç ç”¨)
 	TsStreamSpec stream[MAX_STREAM_NUM];
 } TsProgramSpec;
 
-// ½ÚÄ¿ĞÅÏ¢£¨Ä¿Ç°×î¶àÖ§³Ö1¸ö½ÚÄ¿2ÌõÁ÷£©
+// èŠ‚ç›®ä¿¡æ¯ï¼ˆç›®å‰æœ€å¤šæ”¯æŒ1ä¸ªèŠ‚ç›®2æ¡æµï¼‰
 #define MAX_PROGRAM_NUM		(1)
 typedef struct
 {
-	int program_num;		// [I]Õâ¸öTSÁ÷°üº¬µÄ½ÚÄ¿¸öÊı£¬¶ÔÓÚPS¸ÃÖµÖ»ÄÜÎª1
-	int pat_pmt_counter;	// [O]PAT¡¢PMT¼ÆÊıÆ÷
+	int program_num;		// [I]è¿™ä¸ªTSæµåŒ…å«çš„èŠ‚ç›®ä¸ªæ•°ï¼Œå¯¹äºPSè¯¥å€¼åªèƒ½ä¸º1
+	int pat_pmt_counter;	// [O]PATã€PMTè®¡æ•°å™¨
 	TsProgramSpec prog[MAX_PROGRAM_NUM];
 } TsProgramInfo;
 
 /************************************************************************/
-/* ½Ó¿Úº¯Êı£¬½«Ö¡Á÷»¯¡£±ØĞëÖ¸¶¨TsProgramInfo							*/
+/* æ¥å£å‡½æ•°ï¼Œå°†å¸§æµåŒ–ã€‚å¿…é¡»æŒ‡å®šTsProgramInfo							*/
 /************************************************************************/
 
-// ·µ»ØÁ÷»¯ºóTSµÄ³¤¶È£¬³ö´í£¨Èçdest¿Õ¼ä²»×ã£©·µ»Ø-1¡£ 
+// è¿”å›æµåŒ–åTSçš„é•¿åº¦ï¼Œå‡ºé”™ï¼ˆå¦‚destç©ºé—´ä¸è¶³ï¼‰è¿”å›-1ã€‚ 
 int lts_ts_stream(TEsFrame *frame, uint8_t *dest, int maxlen, TsProgramInfo *pi);
 
-// ·µ»ØPSµÄ³¤¶È£¬³ö´í£¨Èçdest¿Õ¼ä²»×ã£©·µ»Ø-1¡£ 
+// è¿”å›PSçš„é•¿åº¦ï¼Œå‡ºé”™ï¼ˆå¦‚destç©ºé—´ä¸è¶³ï¼‰è¿”å›-1ã€‚ 
 int lts_ps_stream(TEsFrame *frame, uint8_t *dest, int maxlen, TsProgramInfo *pi);
 
 /************************************************************************/
-/* ½Ó¿Úº¯Êı£¬×éÖ¡¡£                                                     */
+/* æ¥å£å‡½æ•°ï¼Œç»„å¸§ã€‚                                                     */
 /************************************************************************/
 typedef struct  
 {
-	TsProgramInfo info;		// ½ÚÄ¿ĞÅÏ¢
-	int is_pes;				// ÊôÓÚÊı¾İ£¬²»ÊÇPSI
-	int program_no;			// µ±Ç°°üËùÊôµÄ½ÚÄ¿ºÅ
-	int stream_no;			// µ±Ç°°üËùÊôµÄÁ÷ºÅ
-	uint64_t pts;			// µ±Ç°°üµÄÊ±¼ä´Á
-	uint8_t *pack_ptr;		// ½â³öÒ»°üµÄÊ×µØÖ·
-	int pack_len;			// ½â³öÒ»°üµÄ³¤¶È
-	uint8_t *es_ptr;		// ESÊı¾İÊ×µØÖ·
-	int es_len;				// ESÊı¾İ³¤¶È
-	int pes_head_len;		// PESÍ·²¿³¤¶È
-	int sync_only;			// Ö»Í¬²½°ü£¬²»½âÎö°ü
-	int ps_started;			// ÒÑÕÒµ½PSÍ·²¿
+	TsProgramInfo info;		// èŠ‚ç›®ä¿¡æ¯
+	int is_pes;				// å±äºæ•°æ®ï¼Œä¸æ˜¯PSI
+	int program_no;			// å½“å‰åŒ…æ‰€å±çš„èŠ‚ç›®å·
+	int stream_no;			// å½“å‰åŒ…æ‰€å±çš„æµå·
+	uint64_t pts;			// å½“å‰åŒ…çš„æ—¶é—´æˆ³
+	uint8_t *pack_ptr;		// è§£å‡ºä¸€åŒ…çš„é¦–åœ°å€
+	int pack_len;			// è§£å‡ºä¸€åŒ…çš„é•¿åº¦
+	uint8_t *es_ptr;		// ESæ•°æ®é¦–åœ°å€
+	int es_len;				// ESæ•°æ®é•¿åº¦
+	int pes_head_len;		// PESå¤´éƒ¨é•¿åº¦
+	int sync_only;			// åªåŒæ­¥åŒ…ï¼Œä¸è§£æåŒ…
+	int ps_started;			// å·²æ‰¾åˆ°PSå¤´éƒ¨
 } TDemux;
 
-// TSÂëÁ÷½â¸´ÓÃ£¬³É¹¦·µ»ØÒÑ´¦Àí³¤¶È£¬Ê§°Ü·µ»Ø-1
-// ts_bufÊÇ´«ÈëµÄTSÁ÷µÄ»º³å
+// TSç æµè§£å¤ç”¨ï¼ŒæˆåŠŸè¿”å›å·²å¤„ç†é•¿åº¦ï¼Œå¤±è´¥è¿”å›-1
+// ts_bufæ˜¯ä¼ å…¥çš„TSæµçš„ç¼“å†²
 int lts_ts_demux(TDemux *handle, uint8_t *ts_buf, int len);
 
-// PSÂëÁ÷½â¸´ÓÃ£¬³É¹¦·µ»ØÒÑ´¦Àí³¤¶È£¬Ê§°Ü·µ»Ø-1
-// ps_bufÊÇ´«ÈëµÄPSÁ÷µÄ»º³å
+// PSç æµè§£å¤ç”¨ï¼ŒæˆåŠŸè¿”å›å·²å¤„ç†é•¿åº¦ï¼Œå¤±è´¥è¿”å›-1
+// ps_bufæ˜¯ä¼ å…¥çš„PSæµçš„ç¼“å†²
 int lts_ps_demux(TDemux *handle, uint8_t *ps_buf, int len);
 
 /************************************************************************/
-/* »º´æ´¦Àí¸¨Öú½Ó¿Ú                                                     */
+/* ç¼“å­˜å¤„ç†è¾…åŠ©æ¥å£                                                     */
 /************************************************************************/
 typedef struct
 {

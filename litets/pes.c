@@ -1,7 +1,7 @@
 #include "litets.h"
 #include <memory.h>
 
-// È·¶¨PESÖĞµÄstream_id
+// ç¡®å®šPESä¸­çš„stream_id
 uint8_t lts_pes_stream_id(int type, int program_number, int stream_number)
 {
 	uint8_t id = 0;
@@ -18,7 +18,7 @@ uint8_t lts_pes_stream_id(int type, int program_number, int stream_number)
 /* make                                                                 */
 /************************************************************************/
 
-// Éú³ÉPESÍ·ÖĞµÄPTSºÍDTS×Ö¶Î
+// ç”ŸæˆPESå¤´ä¸­çš„PTSå’ŒDTSå­—æ®µ
 static void make_pes_pts_dts(uint8_t *buff, uint64_t ts)
 {
 	// PTS
@@ -35,8 +35,8 @@ static void make_pes_pts_dts(uint8_t *buff, uint64_t ts)
 	buff[9] = (uint8_t)((ts & 0xff) << 1) | 0x01;
 }
 
-// Éú³ÉÒ»¸ö´øPTSºÍDTSµÄPESÍ·²¿
-// Ä¿Ç°µ±pes_packet_length³¬¹ı2B, ÉèÖÃÎª0, ¶ÔÓÚTS, ±ê×¼ÔÊĞíÉèÖÃÎª0
+// ç”Ÿæˆä¸€ä¸ªå¸¦PTSå’ŒDTSçš„PESå¤´éƒ¨
+// ç›®å‰å½“pes_packet_lengthè¶…è¿‡2B, è®¾ç½®ä¸º0, å¯¹äºTS, æ ‡å‡†å…è®¸è®¾ç½®ä¸º0
 int lts_pes_make_header(uint8_t stream_id, uint64_t pts, int es_len, uint8_t *dest, int maxlen)
 {
 	uint8_t *buf = dest;
@@ -85,7 +85,7 @@ int lts_pes_make_header(uint8_t stream_id, uint64_t pts, int es_len, uint8_t *de
 /************************************************************************/
 #define BUF2U16(buf) (((buf)[0] << 8) | (buf)[1])
 
-// ½âÎöPES×Ü³¤
+// è§£æPESæ€»é•¿
 static int get_pes_head_len(uint8_t *pes, int len)
 {
 	int pes_head_len = 0;
@@ -106,7 +106,7 @@ static int get_pes_head_len(uint8_t *pes, int len)
 	return pes_head_len;
 }
 
-// ½âÎöPESÍ·²¿³¤¶È£¬·µ»ØÍ·²¿×Ü³¤¶È
+// è§£æPESå¤´éƒ¨é•¿åº¦ï¼Œè¿”å›å¤´éƒ¨æ€»é•¿åº¦
 int lts_pes_parse_header(uint8_t *pes, int len, uint8_t *stream_id, uint64_t *pts, int *es_len)
 {
 	int pes_head_len = get_pes_head_len(pes, len);
@@ -120,7 +120,7 @@ int lts_pes_parse_header(uint8_t *pes, int len, uint8_t *stream_id, uint64_t *pt
 		*stream_id = pes[3];
 	}
 
-	// ½âÎöPTS
+	// è§£æPTS
 	if (pts)
 	{
 		uint8_t flags_2 = pes[7];
@@ -136,7 +136,7 @@ int lts_pes_parse_header(uint8_t *pes, int len, uint8_t *stream_id, uint64_t *pt
 		}
 	}
 
-	// ½âÎöES³¤¶È
+	// è§£æESé•¿åº¦
 	if (es_len)
 	{
 		int pes_len = BUF2U16(&pes[4]);
