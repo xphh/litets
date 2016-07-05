@@ -148,9 +148,9 @@ static int handle_ts_pack(TDemux *handle, uint8_t *ts_pack)
 					int sn;
 					for (sn = 0; sn < MAX_STREAM_NUM; sn++)
 					{
-						if ((uint8_t *)stm + 4 >= payload + payload_len)
+						if ((uint8_t *)stm + 4 >= payload + 3 + section_len) {
 							break;
-
+						}
 						handle->info.prog[i].stream[sn].es_pid = 
 							CHAR_TO_LENGTH(stm->elementary_PID_high5, stm->elementary_PID_low8);
 						handle->info.prog[i].stream[sn].type = stm->stream_type;
